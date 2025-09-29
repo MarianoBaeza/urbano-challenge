@@ -6,45 +6,39 @@ import apiService from './ApiService';
 
 class UserService {
   async save(createUserRequest: CreateUserRequest): Promise<void> {
-    await apiService.post('/api/users', createUserRequest);
+    await apiService.post('/users', createUserRequest);
   }
 
   async findAll(userQuery: UserQuery): Promise<User[]> {
-    return (
-      await apiService.get<User[]>('/api/users', {
-        params: userQuery,
-      })
-    ).data;
+    const response = await apiService.get<User[]>('/users', {
+      params: userQuery,
+    });
+    return response.data;
   }
 
   async findOne(id: string): Promise<User> {
-    return (await apiService.get<User>(`/api/users/${id}`)).data;
+    const response = await apiService.get<User>(`/users/${id}`);
+    return response.data;
   }
 
   async update(
     id: string,
     updateUserRequest: UpdateUserRequest,
   ): Promise<void> {
-    const {
-      firstName,
-      isActive,
-      lastName,
-      password,
-      role,
-      username,
-    } = updateUserRequest;
-    await apiService.put(`/api/users/${id}`, {
-      firstName: firstName || undefined,
-      lastName: lastName || undefined,
-      username: username || undefined,
-      role: role || undefined,
-      isActive,
-      password: password || undefined,
-    });
+    const payload = {
+      firstName: updateUserRequest.firstName,
+      lastName: updateUserRequest.lastName,
+      username: updateUserRequest.username,
+      role: updateUserRequest.role,
+      isActive: updateUserRequest.isActive,
+      password: updateUserRequest.password,
+    };
+
+    await apiService.put(`/users/${id}`, payload);
   }
 
   async delete(id: string): Promise<void> {
-    await apiService.delete(`/api/users/${id}`);
+    await apiService.delete(`/users/${id}`);
   }
 }
 

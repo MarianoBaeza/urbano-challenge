@@ -1,55 +1,46 @@
-import { useContext } from 'react';
-import { Redirect, Route, RouteProps } from 'react-router';
-
+import { ReactNode, useContext } from 'react';
+import { Navigate } from 'react-router-dom';
 import { AuthenticationContext } from './context/AuthenticationContext';
 
-export { Route } from 'react-router';
-
-interface PrivateRouteProps extends RouteProps {
+interface PrivateRouteProps {
   roles?: string[];
+  children: ReactNode;
 }
 
-export function PrivateRoute({
-  component: Component,
-  roles,
-  ...rest
-}: PrivateRouteProps) {
-  const { authenticatedUser } = useContext(AuthenticationContext);
+export function PrivateRoute({ roles, children }: PrivateRouteProps) {
+  const context = useContext(AuthenticationContext);
 
-  return (
-    <Route
-      {...rest}
-      render={(props) => {
-        if (authenticatedUser) {
-          if (roles) {
-            if (roles.includes(authenticatedUser.role)) {
-              return <Component {...props} />;
-            } else {
-              return <Redirect to="/" />;
-            }
-          } else {
-            return <Component {...props} />;
-          }
-        }
-        return <Redirect to="/login" />;
-      }}
-    />
-  );
+  if (!context) {
+    throw new Error(
+      'PrivateRoute must be used within an AuthenticationProvider',
+    );
+  }
+
+  const { authenticatedUser } = context;
+
+  if (!authenticatedUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (roles && !roles.includes(authenticatedUser.role)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
 }
 
-export function AuthRoute({ component: Component, ...rest }) {
-  const { authenticatedUser } = useContext(AuthenticationContext);
+interface AuthRouteProps {
+  children: ReactNode;
+}
 
-  return (
-    <Route
-      {...rest}
-      render={(props) => {
-        return authenticatedUser ? (
-          <Redirect to="/" />
-        ) : (
-          <Component {...props} />
-        );
-      }}
-    />
-  );
+export function AuthRoute({ children }: AuthRouteProps) {
+  const context = useContext(AuthenticationContext);
+
+  if (!context) {
+    throw new Error('AuthRoute must be used within an AuthenticationProvider');
+  }
+
+  const { authenticatedUser } = context;
+
+  return authenticatedUser ? <Navigate to="/" replace /> : <>{children}</>;
 }

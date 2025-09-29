@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, Loader, X } from 'react-feather';
 import { useForm } from 'react-hook-form';
-
 import useAuth from '../../hooks/useAuth';
 import Content from '../../models/content/Content';
 import UpdateContentRequest from '../../models/content/UpdateContentRequest';
@@ -9,6 +8,7 @@ import contentService from '../../services/ContentService';
 import Modal from '../shared/Modal';
 import Table from '../shared/Table';
 import TableItem from '../shared/TableItem';
+import { useAppStore } from '../../store/appStore';
 
 interface ContentsTableProps {
   data: Content[];
@@ -28,6 +28,8 @@ export default function ContentsTable({
   const [error, setError] = useState<string>();
   const [updateShow, setUpdateShow] = useState<boolean>(false);
 
+  const deleteContent = useAppStore((state) => state.deleteContent);
+
   const {
     register,
     handleSubmit,
@@ -39,16 +41,20 @@ export default function ContentsTable({
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      await contentService.delete(courseId, selectedContentId);
+      if (selectedContentId && courseId) {
+        await contentService.delete(courseId, selectedContentId);
+        deleteContent(courseId, selectedContentId);
+      }
       setDeleteShow(false);
-    } catch (error) {
-      setError(error.response.data.message);
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Something went wrong');
     } finally {
       setIsDeleting(false);
     }
   };
 
   const handleUpdate = async (updateContentRequest: UpdateContentRequest) => {
+    if (!selectedContentId) return;
     try {
       await contentService.update(
         courseId,
@@ -57,11 +63,19 @@ export default function ContentsTable({
       );
       setUpdateShow(false);
       reset();
-      setError(null);
-    } catch (error) {
-      setError(error.response.data.message);
+      setError(undefined);
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Something went wrong');
     }
   };
+
+  if (isLoading === true) {
+    return (
+      <div className="w-full flex justify-center items-center p-10">
+        <Loader className="animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -77,7 +91,8 @@ export default function ContentsTable({
                     {new Date(dateCreated).toLocaleDateString()}
                   </TableItem>
                   <TableItem className="text-right">
-                    {['admin', 'editor'].includes(authenticatedUser.role) ? (
+                    {authenticatedUser &&
+                    ['admin', 'editor'].includes(authenticatedUser.role) ? (
                       <button
                         className="text-indigo-600 hover:text-indigo-900 focus:outline-none"
                         onClick={() => {
@@ -92,7 +107,7 @@ export default function ContentsTable({
                         Edit
                       </button>
                     ) : null}
-                    {authenticatedUser.role === 'admin' ? (
+                    {authenticatedUser?.role === 'admin' ? (
                       <button
                         className="text-red-600 hover:text-red-900 ml-3 focus:outline-none"
                         onClick={() => {
@@ -114,7 +129,6 @@ export default function ContentsTable({
         ) : null}
       </div>
 
-      {/* Delete Content Modal */}
       <Modal show={deleteShow}>
         <AlertTriangle size={30} className="text-red-500 mr-5 fixed" />
         <div className="ml-10">
@@ -131,7 +145,7 @@ export default function ContentsTable({
           <button
             className="btn"
             onClick={() => {
-              setError(null);
+              setError(undefined);
               setDeleteShow(false);
             }}
             disabled={isDeleting}
@@ -157,7 +171,6 @@ export default function ContentsTable({
         ) : null}
       </Modal>
 
-      {/* Update Content Modal */}
       {selectedContentId ? (
         <Modal show={updateShow}>
           <div className="flex">
@@ -166,7 +179,7 @@ export default function ContentsTable({
               className="ml-auto focus:outline-none"
               onClick={() => {
                 setUpdateShow(false);
-                setError(null);
+                setError(undefined);
                 reset();
               }}
             >

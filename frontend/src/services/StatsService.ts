@@ -3,7 +3,8 @@ import apiService from './ApiService';
 
 class StatsService {
   async getStats(): Promise<Stats> {
-    return (await apiService.get<Stats>('/api/stats')).data;
+    const response = await apiService.get<Stats>('/stats');
+    return response.data;
   }
 }
 

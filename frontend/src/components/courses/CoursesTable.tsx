@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { AlertTriangle, Loader, X } from 'react-feather';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
-
 import useAuth from '../../hooks/useAuth';
 import Course from '../../models/course/Course';
 import UpdateCourseRequest from '../../models/course/UpdateCourseRequest';
@@ -10,6 +9,7 @@ import courseService from '../../services/CourseService';
 import Modal from '../shared/Modal';
 import Table from '../shared/Table';
 import TableItem from '../shared/TableItem';
+import { useAppStore } from '../../store/appStore';
 
 interface UsersTableProps {
   data: Course[];
@@ -24,6 +24,8 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
   const [error, setError] = useState<string>();
   const [updateShow, setUpdateShow] = useState<boolean>(false);
 
+  const deleteCourse = useAppStore((state) => state.deleteCourse);
+
   const {
     register,
     handleSubmit,
@@ -33,25 +35,28 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
   } = useForm<UpdateCourseRequest>();
 
   const handleDelete = async () => {
+    if (!selectedCourseId) return;
     try {
       setIsDeleting(true);
       await courseService.delete(selectedCourseId);
+      deleteCourse(selectedCourseId);
       setDeleteShow(false);
-    } catch (error) {
-      setError(error.response.data.message);
+    } catch (error: any) {
+      setError(error.response?.data?.message);
     } finally {
       setIsDeleting(false);
     }
   };
 
   const handleUpdate = async (updateCourseRequest: UpdateCourseRequest) => {
+    if (!selectedCourseId) return;
     try {
       await courseService.update(selectedCourseId, updateCourseRequest);
       setUpdateShow(false);
       reset();
-      setError(null);
-    } catch (error) {
-      setError(error.response.data.message);
+      setError(undefined);
+    } catch (error: any) {
+      setError(error.response?.data?.message);
     }
   };
 
@@ -71,7 +76,8 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
                     {new Date(dateCreated).toLocaleDateString()}
                   </TableItem>
                   <TableItem className="text-right">
-                    {['admin', 'editor'].includes(authenticatedUser.role) ? (
+                    {authenticatedUser &&
+                    ['admin', 'editor'].includes(authenticatedUser.role) ? (
                       <button
                         className="text-indigo-600 hover:text-indigo-900 focus:outline-none"
                         onClick={() => {
@@ -86,7 +92,7 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
                         Edit
                       </button>
                     ) : null}
-                    {authenticatedUser.role === 'admin' ? (
+                    {authenticatedUser?.role === 'admin' ? (
                       <button
                         className="text-red-600 hover:text-red-900 ml-3 focus:outline-none"
                         onClick={() => {
@@ -107,7 +113,7 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
           </div>
         ) : null}
       </div>
-      {/* Delete Course Modal */}
+
       <Modal show={deleteShow}>
         <AlertTriangle size={30} className="text-red-500 mr-5 fixed" />
         <div className="ml-10">
@@ -124,7 +130,7 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
           <button
             className="btn"
             onClick={() => {
-              setError(null);
+              setError(undefined);
               setDeleteShow(false);
             }}
             disabled={isDeleting}
@@ -149,7 +155,7 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
           </div>
         ) : null}
       </Modal>
-      {/* Update Course Modal */}
+
       <Modal show={updateShow}>
         <div className="flex">
           <h1 className="font-semibold mb-3">Update Course</h1>
@@ -157,7 +163,7 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
             className="ml-auto focus:outline-none"
             onClick={() => {
               setUpdateShow(false);
-              setError(null);
+              setError(undefined);
               reset();
             }}
           >

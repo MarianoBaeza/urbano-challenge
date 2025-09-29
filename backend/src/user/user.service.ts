@@ -1,10 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { ILike } from 'typeorm';
-
-import { CreateUserDto, UpdateUserDto } from './user.dto';
-import { User } from './user.entity';
-import { UserQuery } from './user.query';
+import { User } from './entities/user.entity';
+import { UserQuery } from './query/user.query';
+import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
@@ -24,19 +22,22 @@ export class UserService {
   }
 
   async findAll(userQuery: UserQuery): Promise<User[]> {
+    const qb = User.createQueryBuilder('user')
+      .orderBy('user.firstName', 'ASC')
+      .addOrderBy('user.lastName', 'ASC');
+
     Object.keys(userQuery).forEach((key) => {
-      if (key !== 'role') {
-        userQuery[key] = ILike(`%${userQuery[key]}%`);
+      const value = userQuery[key];
+      if (value) {
+        if (key === 'role') {
+          qb.andWhere(`user.${key} = :${key}`, { [key]: value });
+        } else {
+          qb.andWhere(`user.${key} ILIKE :${key}`, { [key]: `%${value}%` });
+        }
       }
     });
 
-    return User.find({
-      where: userQuery,
-      order: {
-        firstName: 'ASC',
-        lastName: 'ASC',
-      },
-    });
+    return qb.getMany();
   }
 
   async findById(id: string): Promise<User> {
@@ -59,7 +60,6 @@ export class UserService {
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const currentUser = await this.findById(id);
 
-    /* If username is same as before, delete it from the dto */
     if (currentUser.username === updateUserDto.username) {
       delete updateUserDto.username;
     }
@@ -89,7 +89,6 @@ export class UserService {
     return await User.count();
   }
 
-  /* Hash the refresh token and save it to the database */
   async setRefreshToken(id: string, refreshToken: string): Promise<void> {
     const user = await this.findById(id);
     await User.update(user, {

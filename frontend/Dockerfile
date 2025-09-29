@@ -1,17 +1,16 @@
-FROM node:alpine as build
-
+FROM node:20-alpine AS build
 WORKDIR /app
+
+COPY package.json yarn.lock ./
+RUN yarn install
 
 COPY . .
 
-RUN yarn
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
 RUN yarn build
 
-#---
-
 FROM nginx:alpine
-
-COPY --from=build /app/build/ /var/www
-COPY nginx.conf /etc/nginx/nginx.conf
-
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

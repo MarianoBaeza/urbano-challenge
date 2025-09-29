@@ -1,42 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader, Plus, X } from 'react-feather';
 import { useForm } from 'react-hook-form';
-import { useQuery } from 'react-query';
-
 import Layout from '../components/layout';
 import Modal from '../components/shared/Modal';
 import UsersTable from '../components/users/UsersTable';
 import useAuth from '../hooks/useAuth';
 import CreateUserRequest from '../models/user/CreateUserRequest';
 import userService from '../services/UserService';
+import { useAppStore } from '../store/appStore';
 
 export default function Users() {
   const { authenticatedUser } = useAuth();
+  const [addUserShow, setAddUserShow] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [username, setUsername] = useState('');
-  const [role, setRole] = useState('');
+  const users = useAppStore((state) => state.users);
+  const fetchUsers = useAppStore((state) => state.fetchUsers);
 
-  const [addUserShow, setAddUserShow] = useState<boolean>(false);
-  const [error, setError] = useState<string>();
+  const [filters, setFilters] = useState({
+    firstName: '',
+    lastName: '',
+    username: '',
+    role: '',
+  });
 
-  const { data, isLoading } = useQuery(
-    ['users', firstName, lastName, username, role],
-    async () => {
-      return (
-        await userService.findAll({
-          firstName: firstName || undefined,
-          lastName: lastName || undefined,
-          username: username || undefined,
-          role: role || undefined,
-        })
-      ).filter((user) => user.id !== authenticatedUser.id);
-    },
-    {
-      refetchInterval: 1000,
-    },
-  );
+  useEffect(() => {
+    fetchUsers(filters);
+  }, [filters]);
 
   const {
     register,
@@ -48,68 +38,78 @@ export default function Users() {
   const saveUser = async (createUserRequest: CreateUserRequest) => {
     try {
       await userService.save(createUserRequest);
+      fetchUsers();
       setAddUserShow(false);
-      setError(null);
       reset();
-    } catch (error) {
-      setError(error.response.data.message);
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Something went wrong');
     }
   };
 
+  const filteredUsers = users.filter((u) => u.id !== authenticatedUser?.id);
+
   return (
     <Layout>
-      <h1 className="font-semibold text-3xl mb-5">Manage Users</h1>
+      <h1 className="font-semibold text-3xl mb-5 bg-gray-500 p-5 lg:ml-72 mx-auto">
+        Manage Users
+      </h1>
       <hr />
-      <button
-        className="btn my-5 flex gap-2 w-full sm:w-auto justify-center"
-        onClick={() => setAddUserShow(true)}
-      >
-        <Plus /> Add User
-      </button>
+      <div className="p-5 lg:ml-72 mx-auto">
+        <button
+          className="btn my-5 flex gap-2 w-full sm:w-auto justify-center"
+          onClick={() => setAddUserShow(true)}
+        >
+          <Plus /> Add User
+        </button>
 
-      <div className="table-filter mt-2">
-        <div className="flex flex-row gap-5">
-          <input
-            type="text"
-            className="input w-1/2"
-            placeholder="First Name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-          <input
-            type="text"
-            className="input w-1/2"
-            placeholder="Last Name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-          />
+        <div className="table-filter mt-2">
+          <div className="flex flex-row gap-5">
+            <input
+              type="text"
+              className="input w-1/2"
+              placeholder="First Name"
+              value={filters.firstName}
+              onChange={(e) =>
+                setFilters({ ...filters, firstName: e.target.value })
+              }
+            />
+            <input
+              type="text"
+              className="input w-1/2"
+              placeholder="Last Name"
+              value={filters.lastName}
+              onChange={(e) =>
+                setFilters({ ...filters, lastName: e.target.value })
+              }
+            />
+          </div>
+          <div className="flex flex-row gap-5">
+            <input
+              type="text"
+              className="input w-1/2"
+              placeholder="Username"
+              value={filters.username}
+              onChange={(e) =>
+                setFilters({ ...filters, username: e.target.value })
+              }
+            />
+            <select
+              className="input w-1/2"
+              value={filters.role}
+              onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+            >
+              <option value="">All</option>
+              <option value="user">User</option>
+              <option value="editor">Editor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
         </div>
-        <div className="flex flex-row gap-5">
-          <input
-            type="text"
-            className="input w-1/2"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <select
-            name=""
-            id=""
-            className="input w-1/2"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-          >
-            <option value="">All</option>
-            <option value="user">User</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
+
+        <UsersTable data={filteredUsers} isLoading={false} />
       </div>
 
-      <UsersTable data={data} isLoading={isLoading} />
-
-      {/* Add User Modal */}
       <Modal show={addUserShow}>
         <div className="flex">
           <h1 className="font-semibold mb-3">Add User</h1>
@@ -151,16 +151,16 @@ export default function Users() {
           <input
             type="text"
             className="input"
-            required
             placeholder="Username"
+            required
             disabled={isSubmitting}
             {...register('username')}
           />
           <input
             type="password"
             className="input"
-            required
             placeholder="Password (min 6 characters)"
+            required
             disabled={isSubmitting}
             {...register('password')}
           />
@@ -181,11 +181,11 @@ export default function Users() {
               'Save'
             )}
           </button>
-          {error ? (
+          {error && (
             <div className="text-red-500 p-3 font-semibold border rounded-md bg-red-50">
               {error}
             </div>
-          ) : null}
+          )}
         </form>
       </Modal>
     </Layout>

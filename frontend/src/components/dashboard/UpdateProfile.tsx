@@ -1,8 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Loader } from 'react-feather';
 import { useForm } from 'react-hook-form';
-import { useQuery } from 'react-query';
-
 import useAuth from '../../hooks/useAuth';
 import UpdateUserRequest from '../../models/user/UpdateUserRequest';
 import userService from '../../services/UserService';
@@ -11,10 +10,12 @@ export default function UpdateProfile() {
   const { authenticatedUser } = useAuth();
   const [error, setError] = useState<string>();
 
-  const { data, isLoading, refetch } = useQuery(
-    `user-${authenticatedUser.id}`,
-    () => userService.findOne(authenticatedUser.id),
-  );
+  if (!authenticatedUser) return null;
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['user', authenticatedUser.id],
+    queryFn: () => userService.findOne(authenticatedUser.id),
+  });
 
   const {
     register,
@@ -24,16 +25,17 @@ export default function UpdateProfile() {
   } = useForm<UpdateUserRequest>();
 
   const handleUpdateUser = async (updateUserRequest: UpdateUserRequest) => {
+    if (!authenticatedUser) return;
     try {
       if (updateUserRequest.username === data.username) {
         delete updateUserRequest.username;
       }
       await userService.update(authenticatedUser.id, updateUserRequest);
-      setError(null);
+      setError(undefined);
       setValue('password', '');
       refetch();
-    } catch (error) {
-      setError(error.response.data.message);
+    } catch (error: any) {
+      setError(error.response?.data?.message);
     }
   };
 

@@ -14,16 +14,15 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserGuard } from '../auth/guards/user.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { Role } from '../enums/role.enum';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
-import { User } from './user.entity';
-import { UserQuery } from './user.query';
+import { User } from './entities/user.entity';
+import { UserQuery } from './query/user.query';
 import { UserService } from './user.service';
+import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
 @Controller('users')
 @ApiTags('Users')

@@ -1,32 +1,30 @@
-FROM node:alpine as build
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
-COPY package.json .
-COPY yarn.lock .
+COPY package.json yarn.lock ./
 
-RUN yarn
+RUN yarn install
 
 COPY . .
 
+COPY tsconfig*.json ./
+
 RUN yarn build
 
-#---
-
-FROM node:alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package.json .
-COPY yarn.lock .
-COPY ormconfig.js .
-
+COPY package.json yarn.lock ./
 RUN yarn install --production
+
+COPY ormconfig.js ./
 
 COPY --from=build /app/dist ./dist
 
 EXPOSE 5000
 
-ENTRYPOINT [ "yarn", "start:prod" ]
+ENTRYPOINT ["yarn", "start:prod"]

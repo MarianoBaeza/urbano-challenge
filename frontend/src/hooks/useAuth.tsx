@@ -3,5 +3,9 @@ import { useContext } from 'react';
 import { AuthenticationContext } from '../context/AuthenticationContext';
 
 export default function useAuth() {
-  return useContext(AuthenticationContext);
+  const context = useContext(AuthenticationContext);
+  if (!context) {
+    throw new Error('useAuth debe usarse dentro de un AuthenticationProvider');
+  }
+  return context;
 }

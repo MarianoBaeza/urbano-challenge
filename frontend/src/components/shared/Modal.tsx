@@ -7,7 +7,7 @@ interface ModalProps extends HTMLProps<HTMLDivElement> {
   show: boolean;
 }
 
-export default function Modal({ children, className, show }: ModalProps) {
+export default function Modal({ children, className = '', show }: ModalProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -16,25 +16,26 @@ export default function Modal({ children, className, show }: ModalProps) {
     if (show) {
       setIsVisible(true);
     } else {
-      timeout = setTimeout(() => {
-        setIsVisible(false);
-      }, 150);
+      timeout = setTimeout(() => setIsVisible(false), 150);
     }
 
     return () => clearTimeout(timeout);
   }, [show]);
 
+  const modalRoot = document.getElementById('modal') || document.body;
+
   return createPortal(
     <div
       className={`absolute inset-0 z-50 bg-gray-900 bg-opacity-20 w-full h-full 
-flex justify-center items-center backdrop-filter backdrop-blur transition-opacity ${
-        show ? 'opacity-100' : 'opacity-0'
-      } ${isVisible ? 'visible' : 'invisible'}`}
+        flex justify-center items-center backdrop-filter backdrop-blur transition-opacity 
+        ${show ? 'opacity-100' : 'opacity-0'} ${isVisible ? 'visible' : 'invisible'}`}
     >
-      <div className={'w-3/4 sm:w-1/2 card shadow relative ' + className}>
+      <div
+        className={`w-3/4 sm:w-1/2 card bg-white shadow relative ${className}`}
+      >
         {children}
       </div>
     </div>,
-    document.getElementById('modal'),
+    modalRoot,
   );
 }

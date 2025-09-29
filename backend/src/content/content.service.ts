@@ -1,10 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { ILike } from 'typeorm';
-
 import { CourseService } from '../course/course.service';
-import { CreateContentDto, UpdateContentDto } from './content.dto';
-import { Content } from './content.entity';
-import { ContentQuery } from './content.query';
+import { CreateContentDto, UpdateContentDto } from './dto/content.dto';
+import { Content } from './entities/content.entity';
+import { ContentQuery } from './query/content.query';
 
 @Injectable()
 export class ContentService {
@@ -25,17 +23,17 @@ export class ContentService {
   }
 
   async findAll(contentQuery: ContentQuery): Promise<Content[]> {
-    Object.keys(contentQuery).forEach((key) => {
-      contentQuery[key] = ILike(`%${contentQuery[key]}%`);
-    });
+    const qb = Content.createQueryBuilder('content')
+      .orderBy('content.name', 'ASC')
+      .addOrderBy('content.description', 'ASC');
 
-    return await Content.find({
-      where: contentQuery,
-      order: {
-        name: 'ASC',
-        description: 'ASC',
-      },
-    });
+    for (const [key, value] of Object.entries(contentQuery)) {
+      if (value) {
+        qb.andWhere(`content.${key} ILIKE :${key}`, { [key]: `%${value}%` });
+      }
+    }
+
+    return qb.getMany();
   }
 
   async findById(id: string): Promise<Content> {
@@ -66,16 +64,18 @@ export class ContentService {
     courseId: string,
     contentQuery: ContentQuery,
   ): Promise<Content[]> {
-    Object.keys(contentQuery).forEach((key) => {
-      contentQuery[key] = ILike(`%${contentQuery[key]}%`);
-    });
-    return await Content.find({
-      where: { courseId, ...contentQuery },
-      order: {
-        name: 'ASC',
-        description: 'ASC',
-      },
-    });
+    const qb = Content.createQueryBuilder('content')
+      .where('content.courseId = :courseId', { courseId })
+      .orderBy('content.name', 'ASC')
+      .addOrderBy('content.description', 'ASC');
+
+    for (const [key, value] of Object.entries(contentQuery)) {
+      if (value) {
+        qb.andWhere(`content.${key} ILIKE :${key}`, { [key]: `%${value}%` });
+      }
+    }
+
+    return qb.getMany();
   }
 
   async update(

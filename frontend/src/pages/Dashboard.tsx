@@ -1,17 +1,21 @@
-import { useQuery } from 'react-query';
-
+import { useQuery } from '@tanstack/react-query';
 import UpdateProfile from '../components/dashboard/UpdateProfile';
 import Layout from '../components/layout';
 import statsService from '../services/StatsService';
 
 export default function Dashboard() {
-  const { data, isLoading } = useQuery('stats', statsService.getStats);
+  const { data, isLoading } = useQuery({
+    queryKey: ['stats'],
+    queryFn: () => statsService.getStats(),
+  });
 
   return (
     <Layout>
-      <h1 className="font-semibold text-3xl mb-5">Dashboard</h1>
+      <h1 className="font-semibold text-3xl mb-5 bg-gray-500 p-5 lg:ml-72 mx-auto">
+        Dashboard
+      </h1>
       <hr />
-      <div className="mt-5 flex flex-col gap-5">
+      <div className="mt-5 flex flex-col gap-5 p-5 lg:ml-72 mx-auto">
         {!isLoading ? (
           <div className="flex flex-col sm:flex-row gap-5">
             <div className="card shadow text-white bg-blue-500 flex-1">

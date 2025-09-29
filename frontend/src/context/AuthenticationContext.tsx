@@ -1,15 +1,27 @@
-import { createContext, Dispatch, SetStateAction, useState } from 'react';
+import {
+  createContext,
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useState,
+} from 'react';
 
 import User from '../models/user/User';
 
 interface AuthContextValue {
-  authenticatedUser: User;
-  setAuthenticatedUser: Dispatch<SetStateAction<User>>;
+  authenticatedUser: User | undefined;
+  setAuthenticatedUser: Dispatch<SetStateAction<User | undefined>>;
 }
 
-export const AuthenticationContext = createContext<AuthContextValue>(null);
+export const AuthenticationContext = createContext<
+  AuthContextValue | undefined
+>(undefined);
 
-export function AuthenticationProvider({ children }) {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthenticationProvider({ children }: AuthProviderProps) {
   const [authenticatedUser, setAuthenticatedUser] = useState<User>();
 
   return (

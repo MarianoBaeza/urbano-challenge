@@ -19,9 +19,12 @@ services:
       DATABASE_PORT: 5432
       DATABASE_USERNAME: carna
       DATABASE_PASSWORD: IjSJmKN1fc#DZBL*NHbVoxIh65JvsFFDO@so
-      DATABASE_NAME: "carna-database"
+      DATABASE_NAME: carna-database
       JWT_SECRET: 4125442A472D4B6150645367556B58703273357638792F423F4528482B4D6251
       JWT_REFRESH_SECRET: 576E5A7134743777217A25432A462D4A614E645267556B58703273357538782F
+      FRONTEND_URL: http://localhost:3000,http://frontend:80
+    ports:
+      - "5000:5000"
 
   frontend:
     container_name: frontend
@@ -32,3 +35,5 @@ services:
       - "3000:80"
     depends_on:
       - backend
+    environment:
+      VITE_API_URL: http://backend:5000/api

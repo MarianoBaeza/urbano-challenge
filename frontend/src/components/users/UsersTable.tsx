@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { AlertTriangle, Loader, X } from 'react-feather';
 import { useForm } from 'react-hook-form';
-
 import UpdateUserRequest from '../../models/user/UpdateUserRequest';
 import User from '../../models/user/User';
 import userService from '../../services/UserService';
 import Modal from '../shared/Modal';
 import Table from '../shared/Table';
 import TableItem from '../shared/TableItem';
+import { useAppStore } from '../../store/appStore';
 
 interface UsersTableProps {
   data: User[];
@@ -21,6 +21,9 @@ export default function UsersTable({ data, isLoading }: UsersTableProps) {
   const [selectedUserId, setSelectedUserId] = useState<string>();
   const [error, setError] = useState<string>();
 
+  const deleteUser = useAppStore((state) => state.deleteUser);
+  const updateUser = useAppStore((state) => state.updateUser);
+
   const {
     register,
     handleSubmit,
@@ -30,25 +33,29 @@ export default function UsersTable({ data, isLoading }: UsersTableProps) {
   } = useForm<UpdateUserRequest>();
 
   const handleDelete = async () => {
+    if (!selectedUserId) return;
     try {
       setIsDeleting(true);
       await userService.delete(selectedUserId);
+      deleteUser(selectedUserId);
       setDeleteShow(false);
-    } catch (error) {
-      setError(error.response.data.message);
+    } catch (error: any) {
+      setError(error.response?.data?.message);
     } finally {
       setIsDeleting(false);
     }
   };
 
   const handleUpdate = async (updateUserRequest: UpdateUserRequest) => {
+    if (!selectedUserId) return;
     try {
       await userService.update(selectedUserId, updateUserRequest);
+      updateUser(selectedUserId, updateUserRequest);
       setUpdateShow(false);
       reset();
-      setError(null);
-    } catch (error) {
-      setError(error.response.data.message);
+      setError(undefined);
+    } catch (error: any) {
+      setError(error.response?.data?.message);
     }
   };
 
@@ -113,7 +120,7 @@ export default function UsersTable({ data, isLoading }: UsersTableProps) {
           </div>
         ) : null}
       </div>
-      {/* Delete User Modal */}
+
       <Modal show={deleteShow}>
         <AlertTriangle size={30} className="text-red-500 mr-5 fixed" />
         <div className="ml-10">
@@ -130,7 +137,7 @@ export default function UsersTable({ data, isLoading }: UsersTableProps) {
           <button
             className="btn"
             onClick={() => {
-              setError(null);
+              setError(undefined);
               setDeleteShow(false);
             }}
             disabled={isDeleting}
@@ -155,7 +162,7 @@ export default function UsersTable({ data, isLoading }: UsersTableProps) {
           </div>
         ) : null}
       </Modal>
-      {/* Update User Modal */}
+
       <Modal show={updateShow}>
         <div className="flex">
           <h1 className="font-semibold mb-3">Update User</h1>
@@ -163,7 +170,7 @@ export default function UsersTable({ data, isLoading }: UsersTableProps) {
             className="ml-auto focus:outline-none"
             onClick={() => {
               setUpdateShow(false);
-              setError(null);
+              setError(undefined);
               reset();
             }}
           >

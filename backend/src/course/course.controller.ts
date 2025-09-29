@@ -10,19 +10,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { CreateContentDto, UpdateContentDto } from '../content/content.dto';
-import { Content } from '../content/content.entity';
-import { ContentQuery } from '../content/content.query';
+import { CreateContentDto, UpdateContentDto } from '../content/dto/content.dto';
+import { ContentQuery } from '../content/query/content.query';
 import { ContentService } from '../content/content.service';
 import { Roles } from '../decorators/roles.decorator';
 import { Role } from '../enums/role.enum';
-import { CreateCourseDto, UpdateCourseDto } from './course.dto';
-import { Course } from './course.entity';
-import { CourseQuery } from './course.query';
+import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto';
+import { Course } from './entities/course.entity';
+import { CourseQuery } from './query/course.query';
 import { CourseService } from './course.service';
+import { Content } from 'src/content/entities/content.entity';
 
 @Controller('courses')
 @ApiBearerAuth()

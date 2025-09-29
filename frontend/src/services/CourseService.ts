@@ -4,31 +4,30 @@ import CreateCourseRequest from '../models/course/CreateCourseRequest';
 import UpdateCourseRequest from '../models/course/UpdateCourseRequest';
 import apiService from './ApiService';
 
-class UserService {
+class CourseService {
   async save(createCourseRequest: CreateCourseRequest): Promise<void> {
-    await apiService.post('/api/courses', createCourseRequest);
+    await apiService.post('/courses', createCourseRequest);
   }
 
   async findAll(courseQuery: CourseQuery): Promise<Course[]> {
-    return (
-      await apiService.get<Course[]>('/api/courses', { params: courseQuery })
-    ).data;
+    return (await apiService.get<Course[]>('/courses', { params: courseQuery }))
+      .data;
   }
 
   async findOne(id: string): Promise<Course> {
-    return (await apiService.get<Course>(`/api/courses/${id}`)).data;
+    return (await apiService.get<Course>(`/courses/${id}`)).data;
   }
 
   async update(
     id: string,
     updateCourseRequest: UpdateCourseRequest,
   ): Promise<void> {
-    await apiService.put(`/api/courses/${id}`, updateCourseRequest);
+    await apiService.put(`/courses/${id}`, updateCourseRequest);
   }
 
   async delete(id: string): Promise<void> {
-    await apiService.delete(`/api/courses/${id}`);
+    await apiService.delete(`/courses/${id}`);
   }
 }
 
-export default new UserService();
+export default new CourseService();
